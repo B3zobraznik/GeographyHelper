@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>CartoPro Studio Mobile</title>
+    <style>
+        :root {
+            --bg-main: #0c0c0e;
+            --bg-sidebar: #16161a;
+            --bg-panel: #1f1f27;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.4);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --border: #2e2e38;
+            --danger: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-user-select: none; -webkit-touch-callout: none; }
+        html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; background: var(--bg-main); color: var(--text-main); }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: var(--bg-sidebar); 
+            border-bottom: 1px solid var(--border);
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
+            padding: 0 12px;
+            height: 50px;
+            flex-shrink: 0;
+            z-index: 1000;
+        }
+
+        .logo-text { 
+            font-weight: 800; 
+            font-size: 16px; 
+            color: var(--accent); 
+        }
+
+        .header-buttons { 
+            display: flex; 
+            gap: 6px; 
+        }
+
+        .header-btn { 
+            padding: 6px 10px; 
+            border-radius: 6px; 
+            border: none; 
+            font-weight: 600; 
+            cursor: pointer; 
+            font-size: 10px; 
+            background: transparent; 
+            border: 1px solid var(--border); 
+            color: var(--text-main);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .header-btn.primary { 
+            background: var(--accent); 
+            color: white;
+            border: none;
+        }
+
+        .canvas-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: #000;
+            background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 30px 30px;
+            padding: 5px;
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            background: white;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+            max-width: 100%;
+            max-height: 100%;
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        .bottom-panel {
+            background: var(--bg-sidebar);
+            border-top: 1px solid var(--border);
+            height: 70px;
+            display: flex;
+            gap: 8px;
+            padding: 8px 12px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            flex-shrink: 0;
+            scroll-behavior: smooth;
+        }
+
+        .bottom-panel::-webkit-scrollbar {
+            height: 3px;
+        }
+
+        .bottom-panel::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 2px;
+        }
+
+        .tool-btn {
+            width: 48px;
+            height: 48px;
+            min-width: 48px;
+            min-height: 48px;
+            border-radius: 12px;
+            border: none;
+            background: transparent;
+            color: var(--text-dim);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .tool-btn:active {
+            background: var(--bg-panel);
+        }
+
+        .tool-btn.active {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 8px 20px var(--accent-glow);
+        }
+
+        .icon-svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            pointer-events: none;
+        }
+
+        .settings-btn {
+            margin-left: auto;
+        }
+
+        .settings-menu {
+            position: fixed;
+            bottom: 70px;
+            left: 0;
+            right: 0;
+            background: var(--bg-sidebar);
+            border-top: 1px solid var(--border);
+            max-height: 50vh;
+            overflow-y: auto;
+            display: none;
+            z-index: 999;
+            padding: 16px;
+        }
+
+        .settings-menu.show {
+            display: block;
+        }
+
+        .settings-menu-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            cursor: pointer;
+            font-size: 20px;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .panel-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .section-header {
+            font-size: 10px;
+            font-weight: 900;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .size-slider {
+            width: 100%;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .input-field {
+            background: #0c0c0e;
+            border: 1px solid var(--border);
+            color: white;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            width: 100%;
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+        }
+
+        .color-swatch {
+            aspect-ratio: 1;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .color-swatch.active {
+            border-color: white;
+        }
+
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+            max-height: 150px;
+            overflow-y: auto;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px;
+        }
+
+        .emoji-item {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            border-radius: 6px;
+            transition: 0.1s;
+        }
+
+        .emoji-item:active {
+            background: var(--border);
+        }
+
+        .emoji-item.active {
+            background: var(--accent);
+        }
+
+        .chart-builder {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .chart-row {
+            display: grid;
+            grid-template-columns: 1fr 50px 35px 24px;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 12px;
+            width: 100%;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-box {
+            background: var(--bg-panel);
+            width: 90%;
+            max-width: 320px;
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .modal-box label {
+            font-size: 12px;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .modal-box .input-field {
+            margin-bottom: 16px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 12px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .modal-buttons .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .modal-buttons .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+
+        label {
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo-text">CartoPro</div>
+    <div class="header-buttons">
+        <button class="header-btn" onclick="undo()">⟲</button>
+        <button class="header-btn" onclick="redo()">⟳</button>
+        <button class="header-btn primary" onclick="exportMap()">💾</button>
+    </div>
+</header>
+
+<div class="canvas-wrapper">
+    <canvas id="mainCanvas"></canvas>
+</div>
+
+<div class="settings-menu" id="settingsMenu">
+    <div class="settings-menu-title">
+        <span>Параметры</span>
+        <button class="close-btn" onclick="toggleSettings()">✕</button>
+    </div>
+
+    <div class="panel-section">
+        <div class="section-header">Размер</div>
+        <label>Текущий: <span id="size-val">30px</span></label>
+        <input type="range" id="size-slider" class="size-slider" min="5" max="500" value="30">
+    </div>
+
+    <div class="panel-section">
+        <div class="section-header">Цвет</div>
+        <div class="color-grid" id="palette"></div>
+        <label>HEX:</label>
+        <input type="text" id="hex-input" class="input-field" value="#000000">
+    </div>
+
+    <div class="panel-section" id="poi-panel" style="display: none;">
+        <div class="section-header">Эмодзи</div>
+        <div class="emoji-grid" id="emoji-grid"></div>
+        <input type="text" id="custom-emoji" class="input-field" placeholder="Свой эмодзи...">
+    </div>
+
+    <div class="panel-section" id="chart-panel" style="display: none;">
+        <div class="section-header">Диаграмма</div>
+        <div class="chart-builder">
+            <div id="chart-rows-container"></div>
+            <button class="btn-primary" style="margin-top: 8px;" onclick="addChartRow()">+ Строка</button>
+        </div>
+    </div>
+</div>
+
+<div class="bottom-panel">
+    <button class="tool-btn active" data-tool="brush" title="Кисть"><div class="icon-svg"><svg viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3zM18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg></div></button>
+    <button class="tool-btn" data-tool="fill" title="Заливка"><div class="icon-svg"><svg viewBox="0 0 24 24"><path d="M15 2L13 4M19 6l-2 2M22 11c0 5-4 9-9 9s-9-4-9-9 4-9 9-9 9 4 9 9z"/></svg></div></button>
+    <button class="tool-btn" data-tool="arrow" title="Стрелка"><div class="icon-svg"><svg viewBox="0 0 24 24"><path d="M5 12h14m-7-7l7 7-7 7"/></svg></div></button>
+    <button class="tool-btn" data-tool="poi" title="Эмодзи"><div class="icon-svg"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div></button>
+    <button class="tool-btn" data-tool="chart" title="Диаграмма"><div class="icon-svg"><svg viewBox="0 0 24 24"><path d="M21 21H3V3m15 15V10m-5 8V6m-5 12v-4"/></svg></div></button>
+    <button class="tool-btn" data-tool="text" title="Текст"><div class="icon-svg"><svg viewBox="0 0 24 24"><path d="M4 7V4h16v3M12 4v16"/></svg></div></button>
+    <button class="tool-btn" data-tool="eraser" title="Ластик"><div class="icon-svg"><svg viewBox="0 0 24 24"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21H7z"/></svg></div></button>
+    <button class="tool-btn" data-tool="load" title="Загрузить" onclick="document.getElementById('file-loader').click()"><div class="icon-svg"><svg viewBox="0 0 24 24"><path d="M12 2L4 8v10c0 6 8 8 8 8s8-2 8-8V8l-8-6z"/></svg></div></button>
+    <button class="tool-btn settings-btn" data-tool="settings" title="Параметры" onclick="toggleSettings()"><div class="icon-svg"><svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg></div></button>
+</div>
+
+<div class="modal-overlay" id="textModal">
+    <div class="modal-box">
+        <label>Введите текст:</label>
+        <input type="text" id="text-val" class="input-field" placeholder="Текст...">
+        <div class="modal-buttons">
+            <button class="btn-primary" onclick="placeText()">Добавить</button>
+            <button class="btn-outline" onclick="document.getElementById('textModal').classList.remove('show')">Отмена</button>
+        </div>
+    </div>
+</div>
+
+<input type="file" id="file-loader" accept="image/*" style="display: none;">
+
+<script>
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+    const EMOJIS = `😂 👍 👌 ✌ 🔩 🔝 🔃 💸 💪 👣 ⚠️ 📲 ❤️ 🌌 🔛 ⛽️ 🚀 🐎 🔊 🐽 🐯 🐼 🐷 🙈 🙉 🙊 🐵 😁 😃 😄 😅 😆 😇 😈 😉 😊 😋 😌 😍 😎 😏 😐 😒 😓 😔 😖 😘 😚 😜 😝 😞 😠 😡 😢 😣 😤 😥 😨 😩 😪 😫 😭 😰 😱 😲 😳 😵 😶 😷 👴 🙅 🙆 🙇 🙋 🙌 🙍 🙎 🙏 😸 😹 😺 😻 😼 😽 😾 😿 🙀 ✂ ✅ ✈ ✉ ✊ ✋ ✏ ✒ ✔ ✖ ✨ ✳ ✴ ❄ ❇ ❌ ❎ ❓ ❔ ❕ ❗`.split(/\s+/);
+
+    const state = {
+        tool: 'brush',
+        color: '#000000',
+        size: 30,
+        isDrawing: false,
+        activeEmoji: '🚩',
+        history: [],
+        redoStack: [],
+        startX: 0,
+        startY: 0,
+        textPos: { x: 0, y: 0 }
+    };
+
+    function init() {
+        canvas.width = 1600;
+        canvas.height = 1200;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        setupPalette();
+        setupEmojiGrid();
+        setupToolButtons();
+        setupCanvasEvents();
+        setupSizeSlider();
+        
+        addChartRow('50', 'A', '#ef4444');
+        addChartRow('30', 'B', '#3b82f6');
+        addChartRow('20', 'C', '#10b981');
+        
+        save();
+    }
+
+    function setupToolButtons() {
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const tool = btn.dataset.tool;
+                if (tool === 'settings' || tool === 'load') return;
+                
+                state.tool = tool;
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                document.getElementById('poi-panel').style.display = (tool === 'poi') ? 'block' : 'none';
+                document.getElementById('chart-panel').style.display = (tool === 'chart') ? 'block' : 'none';
+            });
+        });
+    }
+
+    function setupSizeSlider() {
+        document.getElementById('size-slider').oninput = (e) => {
+            state.size = parseInt(e.target.value);
+            document.getElementById('size-val').innerText = state.size + 'px';
+        };
+    }
+
+    function setupCanvasEvents() {
+        canvas.addEventListener('touchstart', onTouchStart, false);
+        canvas.addEventListener('touchmove', onTouchMove, false);
+        canvas.addEventListener('touchend', onTouchEnd, false);
+        canvas.addEventListener('touchcancel', onTouchEnd, false);
+    }
+
+    function onTouchStart(e) {
+        e.preventDefault();
+        state.isDrawing = true;
+        const touch = e.touches[0];
+        const pos = getCanvasPos(touch.clientX, touch.clientY);
+        state.startX = pos.x;
+        state.startY = pos.y;
+
+        if (state.tool === 'poi') { drawEmoji(pos.x, pos.y); save(); }
+        if (state.tool === 'chart') { drawChart(pos.x, pos.y); save(); }
+        if (state.tool === 'fill') { flood(Math.round(pos.x), Math.round(pos.y), state.color); save(); }
+        if (state.tool === 'text') { state.textPos = pos; document.getElementById('textModal').classList.add('show'); }
+    }
+
+    function onTouchMove(e) {
+        if (!state.isDrawing) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        const pos = getCanvasPos(touch.clientX, touch.clientY);
+
+        if (state.tool === 'brush' || state.tool === 'eraser') {
+            ctx.beginPath();
+            ctx.lineWidth = state.size;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = state.tool === 'eraser' ? '#fff' : state.color;
+            ctx.moveTo(state.startX, state.startY);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            state.startX = pos.x;
+            state.startY = pos.y;
+        }
+    }
+
+    function onTouchEnd(e) {
+        if (!state.isDrawing) return;
+        e.preventDefault();
+        
+        if (state.tool === 'arrow' && e.changedTouches.length > 0) {
+            const touch = e.changedTouches[0];
+            const pos = getCanvasPos(touch.clientX, touch.clientY);
+            drawArrow(state.startX, state.startY, pos.x, pos.y);
+            save();
+        }
+        if (state.tool === 'brush' || state.tool === 'eraser') save();
+        
+        state.isDrawing = false;
+    }
+
+    function getCanvasPos(clientX, clientY) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: (clientX - rect.left) * (canvas.width / rect.width),
+            y: (clientY - rect.top) * (canvas.height / rect.height)
+        };
+    }
+
+    function setupPalette() {
+        const p = document.getElementById('palette');
+        ['#000000', '#ffffff', '#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#64748b', '#78350f'].forEach(c => {
+            const s = document.createElement('div');
+            s.className = 'color-swatch';
+            s.style.backgroundColor = c;
+            s.addEventListener('click', () => {
+                state.color = c;
+                document.querySelectorAll('.color-swatch').forEach(i => i.classList.remove('active'));
+                s.classList.add('active');
+            });
+            p.appendChild(s);
+        });
+        document.getElementById('hex-input').oninput = (e) => state.color = e.target.value;
+    }
+
+    function setupEmojiGrid() {
+        const grid = document.getElementById('emoji-grid');
+        EMOJIS.filter(e => e.length > 0).forEach(emoji => {
+            const div = document.createElement('div');
+            div.className = 'emoji-item';
+            div.innerText = emoji;
+            div.addEventListener('click', () => {
+                state.activeEmoji = emoji;
+                document.querySelectorAll('.emoji-item').forEach(i => i.classList.remove('active'));
+                div.classList.add('active');
+            });
+            grid.appendChild(div);
+        });
+        document.getElementById('custom-emoji').oninput = (e) => state.activeEmoji = e.target.value;
+    }
+
+    function addChartRow(val = '10', label = '?', color = null) {
+        const container = document.getElementById('chart-rows-container');
+        const row = document.createElement('div');
+        row.className = 'chart-row';
+        row.innerHTML = `<input type="text" class="c-label input-field" value="${label}"><input type="number" class="c-val input-field" value="${val}"><input type="color" class="c-col" value="${color || '#3b82f6'}" style="width:100%; height:25px; border:none; border-radius: 4px;"><button onclick="this.parentElement.remove()" style="background:none; border:none; color:red; cursor:pointer; font-size: 16px; padding: 0;">✕</button>`;
+        container.appendChild(row);
+    }
+
+    function drawEmoji(x, y) {
+        ctx.font = `${state.size}px serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(state.activeEmoji, x, y);
+    }
+
+    function drawArrow(x1, y1, x2, y2) {
+        const head = state.size * 2;
+        const angle = Math.atan2(y2 - y1, x2 - x1);
+        ctx.beginPath();
+        ctx.lineWidth = state.size / 2;
+        ctx.strokeStyle = state.color;
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(x2 - head * Math.cos(angle - Math.PI / 6), y2 - head * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(x2 - head * Math.cos(angle + Math.PI / 6), y2 - head * Math.sin(angle + Math.PI / 6));
+        ctx.fillStyle = state.color;
+        ctx.fill();
+    }
+
+    function drawChart(x, y) {
+        const rows = document.querySelectorAll('.chart-row');
+        let data = [];
+        rows.forEach(r => data.push({
+            label: r.querySelector('.c-label').value,
+            val: parseFloat(r.querySelector('.c-val').value) || 0,
+            col: r.querySelector('.c-col').value
+        }));
+        const total = data.reduce((a, b) => a + b.val, 0);
+        if (total === 0) return;
+        let start = -Math.PI / 2;
+        data.forEach(item => {
+            const slice = (item.val / total) * 2 * Math.PI;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.arc(x, y, state.size, start, start + slice);
+            ctx.fillStyle = item.col;
+            ctx.fill();
+            const mid = start + slice / 2;
+            ctx.fillStyle = 'white';
+            ctx.font = `${state.size / 3}px sans-serif`;
+            if (item.val > 0) ctx.fillText(item.label, x + Math.cos(mid) * state.size * 0.6, y + Math.sin(mid) * state.size * 0.6);
+            start += slice;
+        });
+    }
+
+    function flood(x, y, color) {
+        const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const d = img.data;
+        const p = (y * canvas.width + x) * 4;
+        const target = [d[p], d[p + 1], d[p + 2]];
+        const rgb = [parseInt(color.slice(1, 3), 16), parseInt(color.slice(3, 5), 16), parseInt(color.slice(5, 7), 16)];
+        if (target.every((v, i) => v === rgb[i])) return;
+        const s = [[x, y]];
+        while (s.length) {
+            const [cx, cy] = s.pop();
+            const i = (cy * canvas.width + cx) * 4;
+            if (d[i] === target[0] && d[i + 1] === target[1] && d[i + 2] === target[2]) {
+                d[i] = rgb[0];
+                d[i + 1] = rgb[1];
+                d[i + 2] = rgb[2];
+                if (cx > 0) s.push([cx - 1, cy]);
+                if (cx < canvas.width - 1) s.push([cx + 1, cy]);
+                if (cy > 0) s.push([cx, cy - 1]);
+                if (cy < canvas.height - 1) s.push([cx, cy + 1]);
+            }
+        }
+        ctx.putImageData(img, 0, 0);
+    }
+
+    function placeText() {
+        ctx.font = `bold ${state.size}px sans-serif`;
+        ctx.fillStyle = state.color;
+        ctx.fillText(document.getElementById('text-val').value, state.textPos.x, state.textPos.y);
+        document.getElementById('textModal').classList.remove('show');
+        save();
+    }
+
+    function toggleSettings() {
+        document.getElementById('settingsMenu').classList.toggle('show');
+    }
+
+    function save() {
+        state.history.push(canvas.toDataURL());
+        if (state.history.length > 40) state.history.shift();
+        state.redoStack = [];
+    }
+
+    function undo() {
+        if (state.history.length > 1) {
+            state.redoStack.push(state.history.pop());
+            render(state.history[state.history.length - 1]);
+        }
+    }
+
+    function redo() {
+        if (state.redoStack.length) {
+            const s = state.redoStack.pop();
+            state.history.push(s);
+            render(s);
+        }
+    }
+
+    function render(src) {
+        const i = new Image();
+        i.onload = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(i, 0, 0);
+        };
+        i.src = src;
+    }
+
+    function exportMap() {
+        const a = document.createElement('a');
+        a.download = 'map.png';
+        a.href = canvas.toDataURL();
+        a.click();
+    }
+
+    document.getElementById('file-loader').onchange = (e) => {
+        const r = new FileReader();
+        r.onload = (ev) => {
+            const i = new Image();
+            i.onload = () => {
+                ctx.drawImage(i, 0, 0, canvas.width, canvas.height);
+                save();
+            };
+            i.src = ev.target.result;
+        };
+        r.readAsDataURL(e.target.files[0]);
+    };
+
+    init();
+</script>
+</body>
+</html>
