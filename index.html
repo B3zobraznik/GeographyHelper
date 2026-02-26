@@ -196,9 +196,35 @@
 
             height: 80px; background: var(--bg-sidebar); border-top: 1px solid var(--border);
 
-            display: flex; align-items: center; justify-content: center; gap: 12px;
+            display: flex; align-items: center; justify-content: flex-start; gap: 12px;
 
-            padding: 0 16px; z-index: 1000;
+            padding: 0 16px; z-index: 1000; overflow-x: auto; overflow-y: hidden;
+
+        }
+
+        .bottom-nav::-webkit-scrollbar {
+
+            height: 4px;
+
+        }
+
+        .bottom-nav::-webkit-scrollbar-track {
+
+            background: var(--bg-main);
+
+        }
+
+        .bottom-nav::-webkit-scrollbar-thumb {
+
+            background: var(--border);
+
+            border-radius: 2px;
+
+        }
+
+        .bottom-nav::-webkit-scrollbar-thumb:hover {
+
+            background: var(--accent);
 
         }
 
@@ -560,6 +586,22 @@
 
     </div>
 
+    <div class="tool-card">
+
+        <div style="display:flex; gap:6px; align-items:center;">
+
+            <button class="btn-icon" onclick="zoomIn()" title="Приблизить" style="width:40px; height:40px;">🔍+</button>
+
+            <button class="btn-icon" onclick="zoomOut()" title="Отдалить" style="width:40px; height:40px;">🔍−</button>
+
+            <button class="btn-icon" onclick="zoomReset()" title="Сброс" style="width:40px; height:40px; font-size:12px;">1:1</button>
+
+        </div>
+
+        <div class="tool-label" style="margin-top:2px;">Зум</div>
+
+    </div>
+
     <div class="tool-card" onclick="togglePanel()">
 
         <div class="tool-circle" style="background:var(--border)">⚙</div>
@@ -694,7 +736,13 @@
 
         chartVisible: false,
 
-        baseCanvasData: null
+        baseCanvasData: null,
+
+        zoomLevel: 1.0,
+
+        minZoom: 0.3,
+
+        maxZoom: 3.0
 
     };
 
@@ -1752,7 +1800,7 @@
 
         const wrapper = document.querySelector('.viewport');
 
-        const scale = Math.min(
+        const baseScale = Math.min(
 
             (wrapper.clientWidth - 40) / canvas.width,
 
@@ -1760,7 +1808,9 @@
 
         );
 
-        container.style.transform = `scale(${scale})`;
+        const finalScale = baseScale * state.zoomLevel;
+
+        container.style.transform = `scale(${finalScale})`;
 
     }
 
@@ -1879,6 +1929,60 @@
         link.href = canvas.toDataURL('image/png');
 
         link.click();
+
+    }
+
+
+
+    // ФУНКЦИИ ЗУМА
+
+    function zoomIn() {
+
+        state.zoomLevel = Math.min(state.maxZoom, state.zoomLevel + 0.2);
+
+        applyZoom();
+
+    }
+
+
+
+    function zoomOut() {
+
+        state.zoomLevel = Math.max(state.minZoom, state.zoomLevel - 0.2);
+
+        applyZoom();
+
+    }
+
+
+
+    function zoomReset() {
+
+        state.zoomLevel = 1.0;
+
+        applyZoom();
+
+    }
+
+
+
+    function applyZoom() {
+
+        const wrapper = document.querySelector('.viewport');
+
+        const baseScale = Math.min(
+
+            (wrapper.clientWidth - 40) / canvas.width,
+
+            (wrapper.clientHeight - 40) / canvas.height
+
+        );
+
+        
+
+        const finalScale = baseScale * state.zoomLevel;
+
+        container.style.transform = `scale(${finalScale})`;
 
     }
 
